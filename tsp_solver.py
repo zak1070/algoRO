@@ -208,10 +208,9 @@ def solve_dfj_enumerative(n, dist_matrix, relax=False):
 
 def solve_dfj_iterative(n, dist_matrix):
     """
-    DFJ Itératif. Génération de contraintes (Row Generation).
-    f=4.
+    DFJ Itératif avec optimisation BONUS.
+    Si exactement 2 sous-tours sont détectés, on n'ajoute qu'une seule contrainte.
     """
-    # Problème Maître (Master Problem)
     prob = pulp.LpProblem("TSP_DFJ_Iter", pulp.LpMinimize)
     x = {}
     for i in range(n):
@@ -231,9 +230,6 @@ def solve_dfj_iterative(n, dist_matrix):
     iterations = 0
     
     while True:
-        
-        
-        # Mesure du temps : UNIQUEMENT l'appel au solveur [cite: 89, 120]
         t0 = time.time()
         prob.solve(solver)
         total_solve_time += (time.time() - t0)
@@ -241,20 +237,77 @@ def solve_dfj_iterative(n, dist_matrix):
         if prob.status != pulp.LpStatusOptimal:
             break
             
-        # Détection de sous-tours (Hors chrono)
         current_edges = extract_edges(n, x)
         subtours = find_subtours(n, current_edges)
         
-        # Condition d'arrêt : Un seul cycle couvrant tous les sommets
         if len(subtours) == 1 and len(subtours[0]) == n:
             break
-        
-        # Ajout des contraintes (cuts) pour chaque sous-tour détecté
-        for S in subtours:
+            
+        # --- MODIFICATION BONUS ---
+        # Si exactement 2 sous-tours, on ne coupe que le premier [cite: 102]
+        if len(subtours) == 2:
+            # On prend arbitrairement le premier (subtours[0])
+            S = subtours[0]
             prob += pulp.lpSum(x[(i, j)] for i in S for j in S if i != j) <= len(S) - 1
+        else:
+            # Cas normal : on ajoute des contraintes pour TOUS les sous-tours
+            for S in subtours:
+                prob += pulp.lpSum(x[(i, j)] for i in S for j in S if i != j) <= len(S) - 1
+        # --------------------------
         
         iterations += 1
+            
     return prob, x, total_solve_time, iterations
+
+# def solve_dfj_iterative(n, dist_matrix):
+#     """
+#     DFJ Itératif. Génération de contraintes (Row Generation).
+#     f=4.
+#     """
+#     # Problème Maître (Master Problem)
+#     prob = pulp.LpProblem("TSP_DFJ_Iter", pulp.LpMinimize)
+#     x = {}
+#     for i in range(n):
+#         for j in range(n):
+#             if i != j:
+#                 x[(i, j)] = pulp.LpVariable(f"x_{i}_{j}", 0, 1, pulp.LpBinary)
+
+#     prob += pulp.lpSum(dist_matrix[i][j] * x[(i, j)] for i in range(n) for j in range(n) if i != j)
+
+#     for i in range(n):
+#         prob += pulp.lpSum(x[(i, j)] for j in range(n) if i != j) == 1
+#     for j in range(n):
+#         prob += pulp.lpSum(x[(i, j)] for i in range(n) if i != j) == 1
+
+#     solver = pulp.PULP_CBC_CMD(msg=0)
+#     total_solve_time = 0
+#     iterations = 0
+    
+#     while True:
+        
+        
+#         # Mesure du temps : UNIQUEMENT l'appel au solveur [cite: 89, 120]
+#         t0 = time.time()
+#         prob.solve(solver)
+#         total_solve_time += (time.time() - t0)
+        
+#         if prob.status != pulp.LpStatusOptimal:
+#             break
+            
+#         # Détection de sous-tours (Hors chrono)
+#         current_edges = extract_edges(n, x)
+#         subtours = find_subtours(n, current_edges)
+        
+#         # Condition d'arrêt : Un seul cycle couvrant tous les sommets
+#         if len(subtours) == 1 and len(subtours[0]) == n:
+#             break
+        
+#         # Ajout des contraintes (cuts) pour chaque sous-tour détecté
+#         for S in subtours:
+#             prob += pulp.lpSum(x[(i, j)] for i in S for j in S if i != j) <= len(S) - 1
+        
+#         iterations += 1
+#     return prob, x, total_solve_time, iterations
 
 # ==============================================================================
 #  MAIN
