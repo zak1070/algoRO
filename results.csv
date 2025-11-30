@@ -1,0 +1,4 @@
+instance,formulation,obj_int,time_int,obj_relax,time_relax,gap,vars,constr
+instance_10_circle_1.txt,MTZ,298.57000000000005,0.3464,248.578,0.0302,0.1674,0,0
+instance_10_circle_1.txt,DFJ_enum,298.57000000000005,0.0641,298.57000000000005,0.0486,0.0,0,0
+instance_10_circle_1.txt,DFJ_iter,298.57000000000005,0.0791,,,,0,0
