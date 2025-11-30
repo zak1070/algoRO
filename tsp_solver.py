@@ -167,8 +167,55 @@ def solve_dfj_enumerative(n, dist_matrix, relax=False):
     
     return prob, x, duration, 0
 
+# def solve_dfj_iterative(n, dist_matrix):
+#     # f=4 (Itératif) [cite: 98]
+#     prob = pulp.LpProblem("TSP_DFJ_Iter", pulp.LpMinimize)
+#     x = {}
+#     for i in range(n):
+#         for j in range(n):
+#             if i != j:
+#                 x[(i, j)] = pulp.LpVariable(f"x_{i}_{j}", 0, 1, pulp.LpBinary)
+
+#     prob += pulp.lpSum(dist_matrix[i][j] * x[(i, j)] for i in range(n) for j in range(n) if i != j)
+
+#     for i in range(n):
+#         prob += pulp.lpSum(x[(i, j)] for j in range(n) if i != j) == 1
+#     for j in range(n):
+#         prob += pulp.lpSum(x[(i, j)] for i in range(n) if i != j) == 1
+
+#     solver = pulp.PULP_CBC_CMD(msg=0)
+#     total_solve_time = 0
+#     iterations = 0
+    
+#     while True:
+#         # Mesure temps solveur cumulatif [cite: 89]
+#         t0 = time.time()
+#         prob.solve(solver)
+#         total_solve_time += (time.time() - t0)
+        
+#         if prob.status != pulp.LpStatusOptimal:
+#             break
+            
+#         current_edges = extract_edges(n, x)
+#         subtours = find_subtours(n, current_edges)
+        
+#         # Condition d'arrêt : 1 seul cycle couvrant n villes
+#         if len(subtours) == 1 and len(subtours[0]) == n:
+#             break
+        
+#         # Ajout des contraintes (Lazy Constraints) [cite: 29]
+#         for S in subtours:
+#             prob += pulp.lpSum(x[(i, j)] for i in S for j in S if i != j) <= len(S) - 1
+        
+#         iterations += 1
+            
+#     return prob, x, total_solve_time, iterations
 def solve_dfj_iterative(n, dist_matrix):
-    # f=4 (Itératif) [cite: 98]
+    """
+    DFJ Itératif avec optimisation BONUS.
+    Si exactement 2 sous-tours sont détectés, on n'ajoute qu'une seule contrainte (l'autre est redondante).
+    """
+    # 1. Création du Problème Maître (Master Problem) sans contraintes de sous-tours
     prob = pulp.LpProblem("TSP_DFJ_Iter", pulp.LpMinimize)
     x = {}
     for i in range(n):
@@ -176,8 +223,10 @@ def solve_dfj_iterative(n, dist_matrix):
             if i != j:
                 x[(i, j)] = pulp.LpVariable(f"x_{i}_{j}", 0, 1, pulp.LpBinary)
 
+    # Objectif
     prob += pulp.lpSum(dist_matrix[i][j] * x[(i, j)] for i in range(n) for j in range(n) if i != j)
 
+    # Contraintes de degré
     for i in range(n):
         prob += pulp.lpSum(x[(i, j)] for j in range(n) if i != j) == 1
     for j in range(n):
@@ -188,7 +237,7 @@ def solve_dfj_iterative(n, dist_matrix):
     iterations = 0
     
     while True:
-        # Mesure temps solveur cumulatif [cite: 89]
+        # Mesure temps solveur cumulatif [cite: 100-101]
         t0 = time.time()
         prob.solve(solver)
         total_solve_time += (time.time() - t0)
@@ -196,6 +245,7 @@ def solve_dfj_iterative(n, dist_matrix):
         if prob.status != pulp.LpStatusOptimal:
             break
             
+        # Détection de sous-tours (Hors chrono)
         current_edges = extract_edges(n, x)
         subtours = find_subtours(n, current_edges)
         
@@ -203,14 +253,19 @@ def solve_dfj_iterative(n, dist_matrix):
         if len(subtours) == 1 and len(subtours[0]) == n:
             break
         
-        # Ajout des contraintes (Lazy Constraints) [cite: 29]
-        for S in subtours:
+        # --- LOGIQUE BONUS  ---
+        # Si exactement 2 sous-tours, on ne coupe que le premier car l'autre contrainte est redondante
+        if len(subtours) == 2:
+            S = subtours[0]
             prob += pulp.lpSum(x[(i, j)] for i in S for j in S if i != j) <= len(S) - 1
+        else:
+            # Cas normal : on ajoute des contraintes pour TOUS les sous-tours détectés
+            for S in subtours:
+                prob += pulp.lpSum(x[(i, j)] for i in S for j in S if i != j) <= len(S) - 1
         
         iterations += 1
             
     return prob, x, total_solve_time, iterations
-
 # ==============================================================================
 #   MAIN
 # ==============================================================================
