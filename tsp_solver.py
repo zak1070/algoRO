@@ -192,8 +192,8 @@ def solve_dfj_enumerative(n, dist_matrix, relax=False):
     nodes = range(1, n) 
     count_constraints = 0
     
-    # Génération Python (Non chronométrée pour respecter [cite: 119])
-    for size in range(2, n): 
+    # Génération Python (Non chronométrée)
+    for size in range(2, n):
         for subset in itertools.combinations(nodes, size):
             # sum(x_ij for i,j in S) <= |S| - 1
             prob += pulp.lpSum(x[(i, j)] for i in subset for j in subset if i != j) <= len(subset) - 1
