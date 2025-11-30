@@ -203,7 +203,7 @@ def solve_dfj_enumerative(n, dist_matrix, relax=False):
     start_t = time.time()
     prob.solve(pulp.PULP_CBC_CMD(msg=0))
     duration = time.time() - start_t
-    
+
     return prob, x, duration, count_constraints
 
 def solve_dfj_iterative(n, dist_matrix):
@@ -231,7 +231,7 @@ def solve_dfj_iterative(n, dist_matrix):
     iterations = 0
     
     while True:
-        iterations += 1
+        
         
         # Mesure du temps : UNIQUEMENT l'appel au solveur [cite: 89, 120]
         t0 = time.time()
@@ -252,7 +252,8 @@ def solve_dfj_iterative(n, dist_matrix):
         # Ajout des contraintes (cuts) pour chaque sous-tour détecté
         for S in subtours:
             prob += pulp.lpSum(x[(i, j)] for i in S for j in S if i != j) <= len(S) - 1
-            
+        
+        iterations += 1
     return prob, x, total_solve_time, iterations
 
 # ==============================================================================
