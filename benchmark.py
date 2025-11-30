@@ -11,7 +11,7 @@ SOLVER_SCRIPT = "tsp_solver.py"
 INSTANCE_DIR = "instances"
 OUTPUT_CSV = "results.csv"
 TIMEOUT = 600  # 10 minutes max par instance
-MAX_N_ENUM = 19  # Limite pour DFJ Enum (f=2/3) car trop lent après
+MAX_N_ENUM = 15  # Limite pour DFJ Enum 
 
 def run_solver(filepath, flag):
     """
